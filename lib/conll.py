@@ -189,7 +189,8 @@ class DependencyTree(nx.DiGraph):
                     for localhead in depdict:
                         for ext_dep in depdict[localhead]:
                             deprel = self[localhead][ext_dep]["deprel"]
-                            self.remove_edge(localhead,ext_dep)
+                            #ROB: don't remove because it might be used for the next localhead
+                            #self.remove_edge(localhead,ext_dep)
                             self.add_edge(spanhead,ext_dep,deprel=deprel)
 
                 #3- Remove B-level tokens
@@ -209,6 +210,8 @@ class DependencyTree(nx.DiGraph):
 
         for h, d in self.edges():
             T.add_edge(new_index_dict[h],new_index_dict[d],deprel=self[h][d]["deprel"])
+        
+        comment = self.graph['comment']
         #4A Quick removal of edges and nodes
         self.__init__()
 
@@ -222,6 +225,7 @@ class DependencyTree(nx.DiGraph):
 
         # 5. remove all fused forms form the multi_tokens field
         self.graph["multi_tokens"] = {}
+        self.graph['comment'] = comment
 
         if not nx.is_tree(self):
             print("Not a tree after fused-form heuristics:",self.get_sentence_as_string())
@@ -235,7 +239,6 @@ class DependencyTree(nx.DiGraph):
             self._remove_node_properties(node_properties_to_remove)
         if remove_arabic_diacritics:
             self.remove_arabic_diacritics()
-
 
 
 class CoNLLReader(object):
@@ -306,7 +309,7 @@ class CoNLLReader(object):
             for sent_i, sent in enumerate(list_of_graphs):
                 if sent_i > 0:
                     print("", file=out)
-                if print_comments:
+                if print_comments and 'comment' in sent.graph:
                     for c in sent.graph["comment"]:
                         print(c, file=out)
                 for token_i in range(1, max(sent.nodes()) + 1):
