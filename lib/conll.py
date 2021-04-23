@@ -102,7 +102,7 @@ class DependencyTree(nx.DiGraph):
                 G.add_edge(h,d)
         return nx.is_tree(G)
 
-    def _choose_spanhead_from_heuristics(self,span_nodes,pos_precedence_list):
+    def _choose_spanhead_from_heuristics(self, span_nodes, pos_precedence_list):
         distancestoroot = [len(nx.ancestors(self,x)) for x in span_nodes]
         shortestdistancetoroot = min(distancestoroot)
         distance_counter = Counter(distancestoroot)
@@ -123,8 +123,9 @@ class DependencyTree(nx.DiGraph):
         candidate_head = - 1
         span_upos  = [self.nodes[x]["cpostag"]for x in highest_nodes_in_span]
         for upos, idx in zip(span_upos,highest_nodes_in_span):
-            if pos_precedence_list.index(upos) < best_rank:
-                best_rank = pos_precedence_list.index(upos)
+            rank = pos_precedence_list.index(upos)
+            if rank < best_rank:
+                best_rank = rank
                 candidate_head = idx
         return candidate_head
 
@@ -139,7 +140,7 @@ class DependencyTree(nx.DiGraph):
             if ":" in self[h][d]["deprel"]:
                 self[h][d]["deprel"]=self[h][d]["deprel"].split(":")[0]
 
-    def _keep_fused_form(self,posPreferenceDicts):
+    def _keep_fused_form(self, pos_precedence_list):
         # For a span A,B  and external tokens C, such as  A > B > C, we have to
         # Make A the head of the span
         # Attach C-level tokens to A
@@ -155,9 +156,9 @@ class DependencyTree(nx.DiGraph):
         for fusedform_idx in sorted(self.graph["multi_tokens"]):
             fusedform_start, fusedform_end = self.graph["multi_tokens"][fusedform_idx]["id"]
             fuseform_span = list(range(fusedform_start,fusedform_end+1))
-            spanhead = self._choose_spanhead_from_heuristics(fuseform_span,posPreferenceDicts)
+            spanhead = self._choose_spanhead_from_heuristics(fuseform_span, pos_precedence_list)
             #if not spanhead:
-            #    spanhead = self._choose_spanhead_from_heuristics(fuseform_span,posPreferenceDicts)
+            #    spanhead = self._choose_spanhead_from_heuristics(fuseform_span, pos_precedence_list)
             spanheads.append(spanhead)
             spanhead_fused_token_dict[spanhead] = fusedform_idx
 
@@ -230,9 +231,15 @@ class DependencyTree(nx.DiGraph):
         if not nx.is_tree(self):
             print("Not a tree after fused-form heuristics:",self.get_sentence_as_string())
 
-    def filter_sentence_content(self,replace_subtokens_with_fused_forms=False, lang=None, posPreferenceDict=None,node_properties_to_remove=None,remove_deprel_suffixes=False,remove_arabic_diacritics=False):
+    def filter_sentence_content(self,
+                                replace_subtokens_with_fused_forms=False,
+                                lang=None,  # Unused.
+                                pos_precedence_list=None,
+                                node_properties_to_remove=None,
+                                remove_deprel_suffixes=False,
+                                remove_arabic_diacritics=False):
         if replace_subtokens_with_fused_forms:
-            self._keep_fused_form(posPreferenceDict)
+            self._keep_fused_form(pos_precedence_list)
         if remove_deprel_suffixes:
             self._remove_deprel_suffixes()
         if node_properties_to_remove:
@@ -333,7 +340,7 @@ class CoNLLReader(object):
             print(u"", file=out)
 
 
-    def read_conll_u(self,filename,keepFusedForm=False, lang=None, posPreferenceDict=None):
+    def read_conll_u(self, filename):
         sentences = []
         sent = DependencyTree()
         multi_tokens = {}
@@ -376,3 +383,23 @@ class CoNLLReader(object):
                     first_token_id = int(token_dict['id'][0])
                     multi_tokens[first_token_id] = token_dict
         return sentences
+
+
+def get_pos_precedence_list(language):
+    if language == "de":
+        pos_list = "PROPN ADP DET".split(" ")
+    elif language == "es":
+        pos_list = "VERB AUX PRON ADP DET".split(" ")
+    elif language == "fr":
+        pos_list = "VERB AUX PRON NOUN ADJ ADV ADP DET PART SCONJ CONJ".split(" ")
+    elif language == "it":
+        pos_list = "VERB AUX ADV PRON ADP DET".split(" ")
+    else:
+        pos_list = []
+
+    # Append a default list to the end of every language-specific list. This
+    # ensures that the precedence for a tag not in the language's list will
+    # be based on the default ordering, while also being lower than all tags
+    # that are in the language's list.
+    default = "VERB NOUN PROPN PRON ADJ NUM ADV INTJ AUX ADP DET PART CCONJ SCONJ X PUNCT".split(" ")
+    return pos_list + default
