@@ -146,8 +146,10 @@ class DependencyTree(nx.DiGraph):
         # Attach C-level tokens to A
         #Remove B-level tokens, which are the subtokens of the fused form della: de la
 
+        errors = []
+
         if self.graph["multi_tokens"] == {}:
-            return
+            return errors
 
         spanheads = []
         spanhead_fused_token_dict = {}
@@ -229,7 +231,9 @@ class DependencyTree(nx.DiGraph):
         self.graph['comment'] = comment
 
         if not nx.is_tree(self):
-            print("Not a tree after fused-form heuristics:",self.get_sentence_as_string())
+            errors.append(InvalidTreeAfterFusedFormHeuristicsError(self.get_sentence_as_string()))
+
+        return errors
 
     def filter_sentence_content(self,
                                 replace_subtokens_with_fused_forms=False,
@@ -238,14 +242,20 @@ class DependencyTree(nx.DiGraph):
                                 node_properties_to_remove=None,
                                 remove_deprel_suffixes=False,
                                 remove_arabic_diacritics=False):
+        errors = []
         if replace_subtokens_with_fused_forms:
-            self._keep_fused_form(pos_precedence_list)
+            errors.extend(self._keep_fused_form(pos_precedence_list))
         if remove_deprel_suffixes:
             self._remove_deprel_suffixes()
         if node_properties_to_remove:
             self._remove_node_properties(node_properties_to_remove)
         if remove_arabic_diacritics:
             self.remove_arabic_diacritics()
+        return errors
+
+
+class InvalidTreeAfterFusedFormHeuristicsError(Exception):
+    pass
 
 
 class CoNLLReader(object):
