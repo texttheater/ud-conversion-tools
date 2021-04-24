@@ -43,10 +43,10 @@ class DependencyTree(nx.DiGraph):
 
     def pathtoroot(self, child):
         path = []
-        newhead = self.head_of(self, child)
+        newhead = self.head_of(child)
         while newhead:
             path.append(newhead)
-            newhead = self.head_of(self, newhead)
+            newhead = self.head_of(newhead)
         return path
 
     def head_of(self, n):
@@ -65,7 +65,7 @@ class DependencyTree(nx.DiGraph):
         return u" ".join(out)
 
     def subsumes(self, head, child):
-        if head in self.pathtoroot(self, child):
+        if head in self.pathtoroot(child):
             return True
 
     def remove_arabic_diacritics(self):
@@ -80,14 +80,14 @@ class DependencyTree(nx.DiGraph):
 
     def get_highest_index_of_span(self, span):  # retrieves the node index that is closest to root
         #TODO: CANDIDATE FOR DEPRECATION
-        distancestoroot = [len(self.pathtoroot(self, x)) for x in span]
+        distancestoroot = [len(self.pathtoroot(x)) for x in span]
         shortestdistancetoroot = min(distancestoroot)
         spanhead = span[distancestoroot.index(shortestdistancetoroot)]
         return spanhead
 
     def get_deepest_index_of_span(self, span):  # retrieves the node index that is farthest from root
         #TODO: CANDIDATE FOR DEPRECATION
-        distancestoroot = [len(self.pathtoroot(self, x)) for x in span]
+        distancestoroot = [len(self.pathtoroot(x)) for x in span]
         longestdistancetoroot = max(distancestoroot)
         lownode = span[distancestoroot.index(longestdistancetoroot)]
         return lownode
@@ -378,7 +378,7 @@ class CoNLLReader(object):
             else:
                 parts = line.split("\t")
                 if len(parts) != len(self.CONLL_U_COLUMNS):
-                    error_msg = 'Invalid number of columns in line {} (found {}, expected {})'.format(line_no, len(parts), len(CONLL_U_COLUMNS))
+                    error_msg = 'Invalid number of columns in line {} (found {}, expected {})'.format(line_no, len(parts), len(self.CONLL_U_COLUMNS))
                     raise Exception(error_msg)
 
                 token_dict = {key: conv_fn(val) for (key, conv_fn), val in zip(self.CONLL_U_COLUMNS, parts)}
