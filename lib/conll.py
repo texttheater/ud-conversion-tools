@@ -213,7 +213,7 @@ class DependencyTree(nx.DiGraph):
 
         for h, d in self.edges():
             T.add_edge(new_index_dict[h],new_index_dict[d],deprel=self[h][d]["deprel"])
-        
+
         comment = self.graph['comment']
         #4A Quick removal of edges and nodes
         self.__init__()
@@ -292,7 +292,7 @@ class CoNLLReader(object):
                 sent = DependencyTree()
             else:
                 raise Exception("Invalid input format in line nr: ", line_num, conll_line, filename)
-     
+
         return sentences
 
     def read_conll_2006_dense(self, filename):
@@ -345,17 +345,19 @@ class CoNLLReader(object):
                        rowmulti = [str(currentmulti.get(col, '_')) for col in columns]
                        print(u"\t".join(rowmulti),file=out)
                     print(u"\t".join(row), file=out)
-            
+
             # emtpy line afterwards
             print(u"", file=out)
 
-
     def read_conll_u(self, filename):
+        return self.read_conll_u_lines(open(filename))
+
+    def read_conll_u_lines(self, lines_iter):
         sentences = []
         sent = DependencyTree()
         multi_tokens = {}
 
-        for line_no, line in enumerate(open(filename).readlines()):
+        for line_no, line in enumerate(lines_iter):
             line = line.strip("\n")
             if not line:
                 # Add extra properties to ROOT node if exists
