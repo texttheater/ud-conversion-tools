@@ -349,10 +349,10 @@ class CoNLLReader(object):
             # emtpy line afterwards
             print(u"", file=out)
 
-    def read_conll_u(self, filename):
+    def read_conll_u(self, filename, include_secondary_edges=True):
         return self.read_conll_u_lines(open(filename))
 
-    def read_conll_u_lines(self, lines_iter):
+    def read_conll_u_lines(self, lines_iter, include_secondary_edges=True):
         sentences = []
         sent = DependencyTree()
         multi_tokens = {}
@@ -386,8 +386,9 @@ class CoNLLReader(object):
                     sent.add_edge(token_dict['head'], token_dict['id'], deprel=token_dict['deprel'])
                     sent.nodes[token_dict['id']].update({k: v for (k, v) in token_dict.items()
                                                         if k not in ('head', 'id', 'deprel', 'deps')})
-                    for head, deprel in token_dict['deps']:
-                        sent.add_edge(head, token_dict['id'], deprel=deprel, secondary=True)
+                    if include_secondary_edges:
+                        for head, deprel in token_dict['deps']:
+                            sent.add_edge(head, token_dict['id'], deprel=deprel, secondary=True)
                 elif token_dict['id'] == None:
                     pass # To skip inserted words i.e. ellipsis
                 else:
