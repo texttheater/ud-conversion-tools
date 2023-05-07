@@ -213,7 +213,7 @@ class DependencyTree(nx.DiGraph):
         
         comment = self.graph['comment']
         #4A Quick removal of edges and nodes
-        self.__init__()
+        self.clear()
 
         #4B Rewriting the Deptree in Self
         # TODO There must a more elegant way to rewrite self -- self= T for instance?
