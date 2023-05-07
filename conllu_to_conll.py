@@ -4,7 +4,7 @@ from pathlib import Path
 import argparse
 import sys, copy
 
-from lib.conll import CoNLLReader
+from lib.conll import CoNLLReader, get_pos_precedence_list
 
 def main():
     parser = argparse.ArgumentParser(description="""Convert conllu to conll format""")
@@ -25,20 +25,10 @@ def main():
         print("Sorry, requires Python 3.x.") #suggestion: install anaconda python
         sys.exit(1)
 
-    POSRANKPRECEDENCEDICT = defaultdict(list)
-    POSRANKPRECEDENCEDICT["default"] = "VERB NOUN PROPN PRON ADJ NUM ADV INTJ AUX ADP DET PART CCONJ SCONJ X PUNCT ".split(" ")
-    POSRANKPRECEDENCEDICT["de"] = "PROPN ADP DET ".split(" ")
-    POSRANKPRECEDENCEDICT["es"] = "VERB AUX PRON ADP DET".split(" ")
-    POSRANKPRECEDENCEDICT["fr"] = "VERB AUX PRON NOUN ADJ ADV ADP DET PART SCONJ CONJ".split(" ")
-    POSRANKPRECEDENCEDICT["it"] = "VERB AUX ADV PRON ADP DET".split(" ")
-
-    if args.lang in POSRANKPRECEDENCEDICT:
-        current_pos_precedence_list = POSRANKPRECEDENCEDICT[args.lang]
-    else:
-        current_pos_precedence_list = POSRANKPRECEDENCEDICT["default"]
+    current_pos_precedence_list = get_pos_precedence_list(args.lang)
 
     cio = CoNLLReader()
-    orig_treebank = cio.read_conll_u(args.input)#, args.keep_fused_forms, args.lang, POSRANKPRECEDENCEDICT)
+    orig_treebank = cio.read_conll_u(args.input)
     modif_treebank = copy.copy(orig_treebank)
 
     # As per Dec 2015 the args.lang variable is redundant once you have current_pos_precedence_list
